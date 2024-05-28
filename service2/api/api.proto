@@ -1,0 +1,15 @@
+syntax = "proto3";
+option go_package = "composer/hashcompose;hashcompose";
+package hashcompose;
+
+service HashComposeService {
+  rpc Gen (StringList) returns (stream HashObj) {}
+}
+
+message StringList {
+  repeated string list = 1;
+}
+
+message HashObj {
+  string hash = 1;
+}
