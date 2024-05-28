@@ -5,6 +5,7 @@ package handler
 import (
 	"crypto/tls"
 	"net/http"
+	"service2/internal/handler/hashhandler"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
@@ -42,11 +43,15 @@ func configureAPI(api *operations.Service2API) http.Handler {
 			return middleware.NotImplemented("operation operations.GetCheck has not yet been implemented")
 		})
 	}
-	if api.PostSendHandler == nil {
-		api.PostSendHandler = operations.PostSendHandlerFunc(func(params operations.PostSendParams) middleware.Responder {
-			return middleware.NotImplemented("operation operations.PostSend has not yet been implemented")
-		})
-	}
+
+	api.PostSendHandler = operations.PostSendHandlerFunc(func(params operations.PostSendParams) middleware.Responder {
+		hashes, err := hashhandler.Generate(params.Params)
+		if err != nil {
+			return nil
+		}
+
+		return operations.NewPostSendOK().WithPayload(hashes)
+	})
 
 	api.PreServerShutdown = func() {}
 

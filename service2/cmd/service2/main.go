@@ -12,7 +12,6 @@ import (
 )
 
 func main() {
-
 	swaggerSpec, err := loads.Embedded(handler.SwaggerJSON, handler.FlatSwaggerJSON)
 	if err != nil {
 		log.Fatalln(err)

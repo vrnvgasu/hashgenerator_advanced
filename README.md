@@ -15,3 +15,8 @@ protoc  api/*.proto --go-grpc_out=pkg --go_out=pkg
 ```
 swagger generate server -f api/api.yml  --exclude-main --server-package=internal/handler -A "service2"
 ```
+#### generate code by proto
+```
+mkdir pkg
+protoc  api/*.proto --go-grpc_out=pkg --go_out=pkg
+```
