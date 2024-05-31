@@ -3,15 +3,22 @@ package main
 import (
 	"log"
 	"os"
+	"service2/config"
+	"service2/internal/repository"
 
 	"github.com/go-openapi/loads"
 	flags "github.com/jessevdk/go-flags"
+	"github.com/pressly/goose"
 
 	"service2/internal/handler"
 	"service2/internal/handler/operations"
 )
 
 func main() {
+	config.Cfg = config.NewConfig("service2", "service2", "127.0.0.1", "15432", "service2_db")
+	repository.Repo = repository.NewRepository(config.Cfg)
+	runMigration()
+
 	swaggerSpec, err := loads.Embedded(handler.SwaggerJSON, handler.FlatSwaggerJSON)
 	if err != nil {
 		log.Fatalln(err)
@@ -48,5 +55,11 @@ func main() {
 	if err := server.Serve(); err != nil {
 		log.Fatalln(err)
 	}
+}
 
+func runMigration() {
+	err := goose.Up(repository.Repo.DB, "./migrations/")
+	if err != nil {
+		panic(err)
+	}
 }
