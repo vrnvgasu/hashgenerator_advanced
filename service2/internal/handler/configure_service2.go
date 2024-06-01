@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"net/http"
 	"service2/internal/handler/hashhandler"
+	"service2/internal/helpers"
 	"service2/internal/repository"
 	"service2/models"
 
@@ -41,11 +42,18 @@ func configureAPI(api *operations.Service2API) http.Handler {
 
 	api.JSONProducer = runtime.JSONProducer()
 
-	if api.GetCheckHandler == nil {
-		api.GetCheckHandler = operations.GetCheckHandlerFunc(func(params operations.GetCheckParams) middleware.Responder {
-			return middleware.NotImplemented("operation operations.GetCheck has not yet been implemented")
-		})
-	}
+	api.GetCheckHandler = operations.GetCheckHandlerFunc(func(params operations.GetCheckParams) middleware.Responder {
+		ids, err := helpers.CastStringArrayToInt64Array(params.Ids)
+		if err != nil {
+			return operations.NewGetCheckBadRequest()
+		}
+		hashes, err := repository.Repo.FindHashesByIds(context.Background(), ids)
+		if err != nil {
+			return operations.NewGetCheckInternalServerError()
+		}
+
+		return operations.NewGetCheckOK().WithPayload(hashes)
+	})
 
 	api.PostSendHandler = operations.PostSendHandlerFunc(func(params operations.PostSendParams) middleware.Responder {
 		grpcHashes, err := hashhandler.Generate(params.Params)

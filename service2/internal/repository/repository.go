@@ -27,6 +27,36 @@ func NewRepository(cfg *config.Config) *Repository {
 	return &Repository{mdb}
 }
 
+func (r *Repository) FindHashesByIds(ctx context.Context, ids []int64) ([]*models.Hash, error) {
+	const op = "FindHashesByIds"
+
+	params := make([]string, 0, len(ids))
+	args := make([]any, 0, len(ids))
+	for i, id := range ids {
+		params = append(params, fmt.Sprintf("$%d", i+1))
+		args = append(args, id)
+	}
+	query := fmt.Sprintf("SELECT id, hash FROM hashes WHERE id IN (%s)", strings.Join(params, ","))
+
+	rows, err := r.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	result := make([]*models.Hash, 0)
+	for rows.Next() {
+		var hash models.Hash
+		err := rows.Scan(&hash.ID, &hash.Hash)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+		result = append(result, &hash)
+	}
+
+	return result, nil
+}
+
 func (r *Repository) FindHashes(ctx context.Context, hashes []string) ([]*models.Hash, error) {
 	const op = "FindHashes"
 
