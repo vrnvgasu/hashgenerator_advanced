@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"service2/internal/handler/hashhandler"
 	"service2/internal/repository"
+	"service2/models"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
@@ -49,13 +50,23 @@ func configureAPI(api *operations.Service2API) http.Handler {
 	api.PostSendHandler = operations.PostSendHandlerFunc(func(params operations.PostSendParams) middleware.Responder {
 		grpcHashes, err := hashhandler.Generate(params.Params)
 		if err != nil {
-			return nil
+			return operations.NewPostSendInternalServerError()
 		}
 
-		hashes, err := repository.Repo.Save(context.Background(), grpcHashes)
+		ctx := context.Background()
+		hashes := make([]*models.Hash, 0, len(grpcHashes))
+
+		existedHashes, err := repository.Repo.FindHashes(ctx, grpcHashes)
 		if err != nil {
 			return operations.NewPostSendInternalServerError()
 		}
+		hashes = append(hashes, existedHashes...)
+
+		newHashes, err := repository.Repo.Save(ctx, hashhandler.FilterWhereNotIn(grpcHashes, existedHashes))
+		if err != nil {
+			return operations.NewPostSendInternalServerError()
+		}
+		hashes = append(hashes, newHashes...)
 
 		return operations.NewPostSendOK().WithPayload(hashes)
 	})
