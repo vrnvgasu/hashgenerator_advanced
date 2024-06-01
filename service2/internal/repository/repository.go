@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"service2/config"
+	"service2/internal/logwrapper"
 	"service2/models"
 	"strings"
 
@@ -21,14 +22,22 @@ func NewRepository(cfg *config.Config) *Repository {
 	mdb, _ := sql.Open("postgres", cfg.PostgresCon())
 	err := mdb.Ping()
 	if err != nil {
+		logwrapper.Logger.Payload(logwrapper.NewPayload().Op("NewRepository").Package("repository")).Fatal(err)
 		panic(err)
 	}
 
 	return &Repository{mdb}
 }
 
-func (r *Repository) FindHashesByIds(ctx context.Context, ids []int64) ([]*models.Hash, error) {
+func (r *Repository) FindHashesByIds(ctx context.Context, ids []int64) (m []*models.Hash, err error) {
 	const op = "FindHashesByIds"
+
+	defer func() {
+		if err != nil {
+			em := fmt.Errorf("%s: %w", op, err)
+			logwrapper.Logger.Payload(logwrapper.NewPayload().Op(op).Package("repository")).Error(em)
+		}
+	}()
 
 	params := make([]string, 0, len(ids))
 	args := make([]any, 0, len(ids))
@@ -47,7 +56,7 @@ func (r *Repository) FindHashesByIds(ctx context.Context, ids []int64) ([]*model
 	result := make([]*models.Hash, 0)
 	for rows.Next() {
 		var hash models.Hash
-		err := rows.Scan(&hash.ID, &hash.Hash)
+		err = rows.Scan(&hash.ID, &hash.Hash)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
@@ -57,8 +66,15 @@ func (r *Repository) FindHashesByIds(ctx context.Context, ids []int64) ([]*model
 	return result, nil
 }
 
-func (r *Repository) FindHashes(ctx context.Context, hashes []string) ([]*models.Hash, error) {
+func (r *Repository) FindHashes(ctx context.Context, hashes []string) (m []*models.Hash, err error) {
 	const op = "FindHashes"
+
+	defer func() {
+		if err != nil {
+			em := fmt.Errorf("%s: %w", op, err)
+			logwrapper.Logger.Payload(logwrapper.NewPayload().Op(op).Package("repository")).Error(em)
+		}
+	}()
 
 	params := make([]string, 0, len(hashes))
 	args := make([]any, 0, len(hashes))
@@ -77,7 +93,7 @@ func (r *Repository) FindHashes(ctx context.Context, hashes []string) ([]*models
 	result := make([]*models.Hash, 0)
 	for rows.Next() {
 		var hash models.Hash
-		err := rows.Scan(&hash.ID, &hash.Hash)
+		err = rows.Scan(&hash.ID, &hash.Hash)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
@@ -89,6 +105,13 @@ func (r *Repository) FindHashes(ctx context.Context, hashes []string) ([]*models
 
 func (r *Repository) Save(ctx context.Context, hashes []string) (result []*models.Hash, err error) {
 	const op = "Repository.Save"
+
+	defer func() {
+		if err != nil {
+			em := fmt.Errorf("%s: %w", op, err)
+			logwrapper.Logger.Payload(logwrapper.NewPayload().Op(op).Package("repository")).Error(em)
+		}
+	}()
 
 	if len(hashes) == 0 {
 		return make([]*models.Hash, 0), nil

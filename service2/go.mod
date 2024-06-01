@@ -3,6 +3,7 @@ module service2
 go 1.22.1
 
 require (
+	github.com/fabienm/go-logrus-formatters v1.0.0
 	github.com/go-openapi/errors v0.22.0
 	github.com/go-openapi/loads v0.22.0
 	github.com/go-openapi/runtime v0.28.0
@@ -13,6 +14,8 @@ require (
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/lib/pq v1.10.9
 	github.com/pressly/goose v2.7.0+incompatible
+	github.com/satori/go.uuid v1.2.0
+	github.com/sirupsen/logrus v1.9.3
 	golang.org/x/net v0.25.0
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.1

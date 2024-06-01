@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"fmt"
+	"service2/internal/logwrapper"
 	"strconv"
 )
 
@@ -10,7 +11,9 @@ func CastStringArrayToInt64Array(values []string) ([]int64, error) {
 	for i, v := range values {
 		val, err := strconv.ParseInt(v, 10, 64)
 		if err != nil {
-			return nil, fmt.Errorf("helper.CastStringArrayToInt64Array: error converting %s to int: %w", v, err)
+			em := fmt.Errorf("helper.CastStringArrayToInt64Array: error converting %s to int: %w", v, err)
+			logwrapper.Logger.Payload(logwrapper.NewPayload().Op("helper.CastStringArrayToInt64Array").Package("main")).Error(em)
+			return nil, em
 		}
 
 		result[i] = val
