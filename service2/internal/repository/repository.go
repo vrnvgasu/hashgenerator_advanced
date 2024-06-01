@@ -27,7 +27,7 @@ func NewRepository(cfg *config.Config) *Repository {
 	return &Repository{mdb}
 }
 
-func (r *Repository) Save(ctx context.Context, hashes []string) (result []models.Hash, err error) {
+func (r *Repository) Save(ctx context.Context, hashes []string) (result []*models.Hash, err error) {
 	const op = "Repository.Save"
 
 	tx, err := r.DB.Begin()
@@ -69,7 +69,7 @@ func (r *Repository) Save(ctx context.Context, hashes []string) (result []models
 	}
 
 	for i, id := range ids {
-		result = append(result, models.Hash{
+		result = append(result, &models.Hash{
 			Hash: &hashes[i],
 			ID:   &id,
 		})

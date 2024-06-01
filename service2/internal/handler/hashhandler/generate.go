@@ -2,14 +2,13 @@ package hashhandler
 
 import (
 	"context"
-	"service2/models"
 	"service2/pkg/composer/hashcompose"
 	"time"
 
 	"google.golang.org/grpc"
 )
 
-func Generate(list []string) ([]*models.Hash, error) {
+func Generate(list []string) ([]string, error) {
 	cwt, _ := context.WithTimeout(context.Background(), time.Second*5)
 	//conn, err := grpc.DialContext(cwt, "pdf-compose-service:50051", grpc.WithInsecure(), grpc.WithBlock())
 	conn, err := grpc.DialContext(cwt, "localhost:50051", grpc.WithInsecure(), grpc.WithBlock())
@@ -25,7 +24,7 @@ func Generate(list []string) ([]*models.Hash, error) {
 		panic(err)
 	}
 
-	hashes := make([]*models.Hash, 0, len(list))
+	grpcHashes := make([]string, 0, len(list))
 	for {
 		grpcRes, err := stream.Recv() // вынимает порцию данных из стрима
 		if grpcRes == nil {
@@ -36,11 +35,8 @@ func Generate(list []string) ([]*models.Hash, error) {
 		}
 
 		grpcHash := grpcRes.GetHash()
-		hashes = append(hashes, &models.Hash{
-			Hash: &grpcHash,
-			ID:   nil,
-		})
+		grpcHashes = append(grpcHashes, grpcHash)
 	}
 
-	return hashes, nil
+	return grpcHashes, nil
 }

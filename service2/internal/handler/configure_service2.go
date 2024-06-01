@@ -3,9 +3,11 @@
 package handler
 
 import (
+	"context"
 	"crypto/tls"
 	"net/http"
 	"service2/internal/handler/hashhandler"
+	"service2/internal/repository"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
@@ -45,9 +47,14 @@ func configureAPI(api *operations.Service2API) http.Handler {
 	}
 
 	api.PostSendHandler = operations.PostSendHandlerFunc(func(params operations.PostSendParams) middleware.Responder {
-		hashes, err := hashhandler.Generate(params.Params)
+		grpcHashes, err := hashhandler.Generate(params.Params)
 		if err != nil {
 			return nil
+		}
+
+		hashes, err := repository.Repo.Save(context.Background(), grpcHashes)
+		if err != nil {
+			return operations.NewPostSendInternalServerError()
 		}
 
 		return operations.NewPostSendOK().WithPayload(hashes)
