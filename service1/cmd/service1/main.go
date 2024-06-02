@@ -2,9 +2,13 @@ package main
 
 import (
 	"net"
+	"os"
+	"os/signal"
 	"service1/internal/handler"
 	"service1/internal/lg"
 	"service1/pkg/composer/hashcompose"
+	"syscall"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/vrnvgasu/logwrapper"
@@ -24,7 +28,19 @@ func main() {
 	s := grpc.NewServer()
 	server := &handler.HashComposeServiceServer{}
 	hashcompose.RegisterHashComposeServiceServer(s, server)
-	if err := s.Serve(lis); err != nil {
-		lg.Fatal("server.Serve", pack, err)
-	}
+
+	go func(server *handler.HashComposeServiceServer) {
+		if err := s.Serve(lis); err != nil {
+			lg.Fatal("server.Serve", pack, err)
+		}
+	}(server)
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+
+	<-c
+
+	lg.Info("server.Serve", pack, "Server will shutdown gracefully")
+	time.Sleep(5 * time.Second)
+	lg.Info("server.Serve", pack, "Server stopped")
 }

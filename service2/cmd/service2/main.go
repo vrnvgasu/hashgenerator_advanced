@@ -2,10 +2,14 @@ package main
 
 import (
 	"context"
+	"net/http"
 	"os"
+	"os/signal"
 	"service2/config"
 	"service2/internal/lg"
 	"service2/internal/repository"
+	"syscall"
+	"time"
 
 	"service2/internal/handler"
 	"service2/internal/handler/operations"
@@ -20,6 +24,8 @@ import (
 const pack = "main"
 
 func main() {
+	serverIsStopped := false
+
 	lg.Logger = logwrapper.NewLogger(logrus.DebugLevel, []logrus.Hook{})
 	config.Cfg = config.NewConfig("service2", "service2", "127.0.0.1", "15432", "service2_db")
 	repository.Repo = repository.NewRepository(config.Cfg)
@@ -35,7 +41,11 @@ func main() {
 	api := operations.NewService2API(swaggerSpec)
 	server := handler.NewServer(api)
 	server.Port = 8080
-	defer server.Shutdown()
+	defer func() {
+		if !serverIsStopped {
+			server.Shutdown()
+		}
+	}()
 
 	parser := flags.NewParser(server, flags.Default)
 	parser.ShortDescription = "Service 2: Statefull сервис, который соответствует спецификации Swagger в api/api.yml"
@@ -62,10 +72,25 @@ func main() {
 
 	server.ConfigureAPI()
 
-	lg.Info(ctx, "server.Serve", pack, "Starting server")
-	if err := server.Serve(); err != nil {
+	go func(server *handler.Server) {
+		lg.Info(ctx, "server.Serve", pack, "Starting server")
+		if err := server.Serve(); err != nil && err != http.ErrServerClosed {
+			lg.Fatal(ctx, "server.Serve", pack, err)
+		}
+	}(server)
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+
+	<-c
+
+	lg.Info(ctx, "server.Serve", pack, "Server will shutdown gracefully")
+	time.Sleep(5 * time.Second)
+	if err := server.Shutdown(); err != nil {
 		lg.Fatal(ctx, "server.Serve", pack, err)
 	}
+	serverIsStopped = true
+	lg.Info(ctx, "server.Serve", pack, "Server stopped")
 }
 
 func runMigration() {
