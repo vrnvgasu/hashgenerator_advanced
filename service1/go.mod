@@ -3,7 +3,7 @@ module service1
 go 1.22.1
 
 require (
-	github.com/satori/go.uuid v1.2.0
+	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/vrnvgasu/logwrapper v0.0.0-20240602100508-f79b305c9ec9
 	google.golang.org/grpc v1.64.0

@@ -1,17 +1,18 @@
 package lg
 
 import (
+	"github.com/pkg/errors"
 	"github.com/vrnvgasu/logwrapper"
 )
 
 var Logger *logwrapper.StandardLogger
 
 func Error(op string, pack string, err error) {
-	Logger.Payload(newPayload(op, pack)).Error(err)
+	Logger.Payload(newPayload(op, pack)).Error(errors.WithStack(err))
 }
 
 func Fatal(op string, pack string, err error) {
-	Logger.Payload(newPayload(op, pack)).Fatal(err)
+	Logger.Payload(newPayload(op, pack)).Fatal(errors.WithStack(err))
 }
 
 func Info(op string, pack string, message string) {
