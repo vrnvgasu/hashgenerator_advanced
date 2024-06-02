@@ -7,15 +7,17 @@ import (
 	"crypto/tls"
 	"net/http"
 	"service2/internal/handler/hashhandler"
+	"service2/internal/handler/middlewares"
 	"service2/internal/helpers"
+	"service2/internal/lg"
 	"service2/internal/repository"
 	"service2/models"
+
+	"service2/internal/handler/operations"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
-
-	"service2/internal/handler/operations"
 )
 
 //go:generate swagger generate server --target ../../../service2 --name Service2 --spec ../../api/api.yml --server-package internal/handler --principal interface{} --exclude-main
@@ -43,25 +45,47 @@ func configureAPI(api *operations.Service2API) http.Handler {
 	api.JSONProducer = runtime.JSONProducer()
 
 	api.GetCheckHandler = operations.GetCheckHandlerFunc(func(params operations.GetCheckParams) middleware.Responder {
-		ids, err := helpers.CastStringArrayToInt64Array(params.Ids)
+		const (
+			op   = "operations.GetCheckHandlerFunc"
+			pack = "handler"
+		)
+
+		ctx := params.HTTPRequest.Context()
+
+		lg.Info(ctx, op, pack, "start GetCheckHandlerFunc")
+
+		ids, err := helpers.CastStringArrayToInt64Array(ctx, params.Ids)
 		if err != nil {
+			lg.Error(ctx, op, pack, err)
 			return operations.NewGetCheckBadRequest()
 		}
 		hashes, err := repository.Repo.FindHashesByIds(context.Background(), ids)
 		if err != nil {
+			lg.Error(ctx, op, pack, err)
 			return operations.NewGetCheckInternalServerError()
 		}
+
+		lg.Info(ctx, op, pack, "end GetCheckHandlerFunc")
 
 		return operations.NewGetCheckOK().WithPayload(hashes)
 	})
 
 	api.PostSendHandler = operations.PostSendHandlerFunc(func(params operations.PostSendParams) middleware.Responder {
-		grpcHashes, err := hashhandler.Generate(params.Params)
+		const (
+			op   = "operations.PostSendHandlerFunc"
+			pack = "handler"
+		)
+
+		ctx := params.HTTPRequest.Context()
+
+		lg.Info(ctx, op, pack, "start PostSendHandlerFunc")
+
+		grpcHashes, err := hashhandler.Generate(ctx, params.Params)
 		if err != nil {
+			lg.Error(ctx, op, pack, err)
 			return operations.NewPostSendInternalServerError()
 		}
 
-		ctx := context.Background()
 		hashes := make([]*models.Hash, 0, len(grpcHashes))
 
 		existedHashes, err := repository.Repo.FindHashes(ctx, grpcHashes)
@@ -72,9 +96,12 @@ func configureAPI(api *operations.Service2API) http.Handler {
 
 		newHashes, err := repository.Repo.Save(ctx, hashhandler.FilterWhereNotIn(grpcHashes, existedHashes))
 		if err != nil {
+			lg.Error(ctx, op, pack, err)
 			return operations.NewPostSendInternalServerError()
 		}
 		hashes = append(hashes, newHashes...)
+
+		lg.Info(ctx, op, pack, "end PostSendHandlerFunc")
 
 		return operations.NewPostSendOK().WithPayload(hashes)
 	})
@@ -107,5 +134,5 @@ func setupMiddlewares(handler http.Handler) http.Handler {
 // The middleware configuration happens before anything, this middleware also applies to serving the swagger.json document.
 // So this is a good place to plug in a panic handling middleware, logging and metrics.
 func setupGlobalMiddleware(handler http.Handler) http.Handler {
-	return handler
+	return middlewares.ContextRequestMiddleware(handler)
 }

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"context"
 	"os"
 	"service2/config"
 	"service2/internal/lg"
@@ -17,16 +17,19 @@ import (
 	"github.com/vrnvgasu/logwrapper"
 )
 
+const pack = "main"
+
 func main() {
+	lg.Logger = logwrapper.NewLogger(logrus.DebugLevel, []logrus.Hook{})
 	config.Cfg = config.NewConfig("service2", "service2", "127.0.0.1", "15432", "service2_db")
 	repository.Repo = repository.NewRepository(config.Cfg)
-	lg.Logger = logwrapper.NewLogger(logrus.DebugLevel, []logrus.Hook{})
 	runMigration()
+
+	ctx := context.Background()
 
 	swaggerSpec, err := loads.Embedded(handler.SwaggerJSON, handler.FlatSwaggerJSON)
 	if err != nil {
-		lg.Logger.Payload(logwrapper.NewPayload().Op("load swagger").Package("main")).Fatal(err)
-		log.Fatalln(err)
+		lg.Fatal(ctx, "load swagger", pack, err)
 	}
 
 	api := operations.NewService2API(swaggerSpec)
@@ -41,8 +44,7 @@ func main() {
 	for _, optsGroup := range api.CommandLineOptionsGroups {
 		_, err := parser.AddGroup(optsGroup.ShortDescription, optsGroup.LongDescription, optsGroup.Options)
 		if err != nil {
-			lg.Logger.Payload(logwrapper.NewPayload().Op("parser.AddGroup").Package("main")).Fatal(err)
-			log.Fatalln(err)
+			lg.Fatal(ctx, "parser.AddGroup", pack, err)
 		}
 	}
 
@@ -54,24 +56,23 @@ func main() {
 			}
 		}
 
-		lg.Logger.Payload(logwrapper.NewPayload().Op("parser.Parse").Package("main")).Fatal(err)
+		lg.Fatal(ctx, "parser.Parse", pack, err)
 		os.Exit(code)
 	}
 
 	server.ConfigureAPI()
 
-	lg.Logger.Payload(logwrapper.NewPayload().Package("main")).Info("Starting server")
+	lg.Info(ctx, "server.Serve", pack, "Starting server")
 	if err := server.Serve(); err != nil {
-		lg.Logger.Payload(logwrapper.NewPayload().Op("server.Serve").Package("main")).Fatal(err)
-		log.Fatalln(err)
+		lg.Fatal(ctx, "server.Serve", pack, err)
 	}
 }
 
 func runMigration() {
-	lg.Logger.Payload(logwrapper.NewPayload().Package("main")).Info("run migrations")
+	lg.Info(context.Background(), "runMigration", pack, "run migrations")
 	err := goose.Up(repository.Repo.DB, "./migrations/")
 	if err != nil {
-		lg.Logger.Payload(logwrapper.NewPayload().Op("runMigration").Package("main")).Fatal(err)
+		lg.Fatal(context.Background(), "runMigration", pack, err)
 		panic(err)
 	}
 }
