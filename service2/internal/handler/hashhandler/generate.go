@@ -2,10 +2,11 @@ package hashhandler
 
 import (
 	"context"
-	"service2/internal/logwrapper"
+	"service2/internal/lg"
 	"service2/pkg/composer/hashcompose"
 	"time"
 
+	"github.com/vrnvgasu/logwrapper"
 	"google.golang.org/grpc"
 )
 
@@ -14,7 +15,7 @@ func Generate(list []string) ([]string, error) {
 	//conn, err := grpc.DialContext(cwt, "pdf-compose-service:50051", grpc.WithInsecure(), grpc.WithBlock())
 	conn, err := grpc.DialContext(cwt, "localhost:50051", grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		logwrapper.Logger.Payload(logwrapper.NewPayload().Op("Generate").Package("hashhandler")).Fatal(err)
+		lg.Logger.Payload(logwrapper.NewPayload().Op("Generate").Package("hashhandler")).Fatal(err)
 		panic(err)
 	}
 	defer conn.Close()
@@ -23,7 +24,7 @@ func Generate(list []string) ([]string, error) {
 
 	stream, err := uc.Gen(cwt, &hashcompose.StringList{List: list})
 	if err != nil {
-		logwrapper.Logger.Payload(logwrapper.NewPayload().Op("Generate").Package("hashhandler")).Fatal(err)
+		lg.Logger.Payload(logwrapper.NewPayload().Op("Generate").Package("hashhandler")).Fatal(err)
 		panic(err)
 	}
 
@@ -34,7 +35,7 @@ func Generate(list []string) ([]string, error) {
 			break
 		}
 		if err != nil {
-			logwrapper.Logger.Payload(logwrapper.NewPayload().Op("Generate").Package("hashhandler")).Fatal(err)
+			lg.Logger.Payload(logwrapper.NewPayload().Op("Generate").Package("hashhandler")).Fatal(err)
 			panic(err)
 		}
 

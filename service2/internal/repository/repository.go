@@ -5,11 +5,12 @@ import (
 	"database/sql"
 	"fmt"
 	"service2/config"
-	"service2/internal/logwrapper"
+	"service2/internal/lg"
 	"service2/models"
 	"strings"
 
 	_ "github.com/lib/pq"
+	"github.com/vrnvgasu/logwrapper"
 )
 
 var Repo *Repository
@@ -22,7 +23,7 @@ func NewRepository(cfg *config.Config) *Repository {
 	mdb, _ := sql.Open("postgres", cfg.PostgresCon())
 	err := mdb.Ping()
 	if err != nil {
-		logwrapper.Logger.Payload(logwrapper.NewPayload().Op("NewRepository").Package("repository")).Fatal(err)
+		lg.Logger.Payload(logwrapper.NewPayload().Op("NewRepository").Package("repository")).Fatal(err)
 		panic(err)
 	}
 
@@ -35,7 +36,7 @@ func (r *Repository) FindHashesByIds(ctx context.Context, ids []int64) (m []*mod
 	defer func() {
 		if err != nil {
 			em := fmt.Errorf("%s: %w", op, err)
-			logwrapper.Logger.Payload(logwrapper.NewPayload().Op(op).Package("repository")).Error(em)
+			lg.Logger.Payload(logwrapper.NewPayload().Op(op).Package("repository")).Error(em)
 		}
 	}()
 
@@ -72,7 +73,7 @@ func (r *Repository) FindHashes(ctx context.Context, hashes []string) (m []*mode
 	defer func() {
 		if err != nil {
 			em := fmt.Errorf("%s: %w", op, err)
-			logwrapper.Logger.Payload(logwrapper.NewPayload().Op(op).Package("repository")).Error(em)
+			lg.Logger.Payload(logwrapper.NewPayload().Op(op).Package("repository")).Error(em)
 		}
 	}()
 
@@ -109,7 +110,7 @@ func (r *Repository) Save(ctx context.Context, hashes []string) (result []*model
 	defer func() {
 		if err != nil {
 			em := fmt.Errorf("%s: %w", op, err)
-			logwrapper.Logger.Payload(logwrapper.NewPayload().Op(op).Package("repository")).Error(em)
+			lg.Logger.Payload(logwrapper.NewPayload().Op(op).Package("repository")).Error(em)
 		}
 	}()
 
