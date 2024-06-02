@@ -3,12 +3,9 @@ package handler
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"service1/internal/lg"
 	"service1/pkg/composer/hashcompose"
 	"sync"
-
-	"github.com/vrnvgasu/logwrapper"
 )
 
 type HashComposeServiceServer struct {
@@ -37,9 +34,7 @@ func hash(s string, stream hashcompose.HashComposeService_GenServer, wg *sync.Wa
 		Hash: hash,
 	})
 	if err != nil {
-		lg.Logger.
-			Payload(logwrapper.NewPayload().Op("HashComposeServiceServer.hash").Package("handler")).
-			Error(fmt.Errorf("hash err: %w", err))
+		lg.Error("HashComposeServiceServer.hash", "handler", err)
 	}
 
 	wg.Done()
