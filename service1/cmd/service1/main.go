@@ -4,6 +4,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"service1/config"
 	"service1/internal/handler"
 	"service1/internal/lg"
 	"service1/pkg/composer/hashcompose"
@@ -19,9 +20,11 @@ const pack = "main"
 
 func main() {
 	lg.Logger = logwrapper.NewLogger(logrus.DebugLevel, []logrus.Hook{})
+	config.Cfg = config.MustLoad()
+	lg.Logger = logwrapper.NewLogger(logrus.Level(config.Cfg.DebugLevel), []logrus.Hook{})
 
 	lg.Info("serverStar", pack, "Starting server")
-	lis, err := net.Listen("tcp", ":50051")
+	lis, err := net.Listen("tcp", ":"+config.Cfg.Port)
 	if err != nil {
 		lg.Fatal("net.Listen", pack, err)
 	}

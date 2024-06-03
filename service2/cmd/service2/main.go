@@ -25,9 +25,11 @@ const pack = "main"
 
 func main() {
 	serverIsStopped := false
-
 	lg.Logger = logwrapper.NewLogger(logrus.DebugLevel, []logrus.Hook{})
-	config.Cfg = config.NewConfig("service2", "service2", "127.0.0.1", "15432", "service2_db")
+	config.Cfg = config.MustLoad()
+
+	lg.Logger = logwrapper.NewLogger(logrus.Level(config.Cfg.DebugConfig.Level), []logrus.Hook{})
+	//config.Cfg = config.NewConfig("service2", "service2", "127.0.0.1", "15432", "service2_db")
 	repository.Repo = repository.NewRepository(config.Cfg)
 	runMigration()
 
@@ -40,7 +42,7 @@ func main() {
 
 	api := operations.NewService2API(swaggerSpec)
 	server := handler.NewServer(api)
-	server.Port = 8080
+	server.Port = config.Cfg.HTTPConfig.Port
 	defer func() {
 		if !serverIsStopped {
 			server.Shutdown()
@@ -95,7 +97,8 @@ func main() {
 
 func runMigration() {
 	lg.Info(context.Background(), "runMigration", pack, "run migrations")
-	err := goose.Up(repository.Repo.DB, "./migrations/")
+	//err := goose.Up(repository.Repo.DB, "./migrations/")
+	err := goose.Up(repository.Repo.DB, "/go/bin/migrations/")
 	if err != nil {
 		lg.Fatal(context.Background(), "runMigration", pack, err)
 		panic(err)

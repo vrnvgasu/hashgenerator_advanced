@@ -2,6 +2,7 @@ package hashhandler
 
 import (
 	"context"
+	"service2/config"
 	"service2/internal/lg"
 	"service2/pkg/composer/hashcompose"
 	"time"
@@ -16,7 +17,7 @@ func Generate(ctx context.Context, list []string) ([]string, error) {
 	)
 
 	cwt, _ := context.WithTimeout(ctx, time.Second*5)
-	conn, err := grpc.DialContext(cwt, "localhost:50051", grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.DialContext(cwt, config.Cfg.GRPCConfig.Host+":"+config.Cfg.GRPCConfig.Port, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		lg.Fatal(ctx, op, pack, err)
 		panic(err)
