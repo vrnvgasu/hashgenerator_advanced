@@ -20,3 +20,23 @@ swagger generate server -f api/api.yml  --exclude-main --server-package=internal
 mkdir pkg
 protoc  api/*.proto --go-grpc_out=pkg --go_out=pkg
 ```
+
+-------------------
+#### You can set your ENV configs. You can find them in [docker-compose.yml](docker-compose.yml)
+
+-------------------
+#### run application
+```shell
+docker-compose  up
+```
+
+#### create hashes
+POST localhost:8080/send
+```json
+[
+  "string1","string2","string3"
+]
+```
+
+#### get hash by id
+GET localhost:8080/check?ids=2
