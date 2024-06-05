@@ -40,3 +40,12 @@ POST localhost:8080/send
 
 #### get hash by id
 GET localhost:8080/check?ids=2
+
+-------------------
+## Test
+### Service1
+```shell
+cd service1
+go generate ./...
+go test ./...
+```
